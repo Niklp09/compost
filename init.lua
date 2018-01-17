@@ -55,6 +55,21 @@ compost.register_item("farming:wheat")
 compost.register_group("plant")
 compost.register_group("flower")
 
+
+local function next_state(pos, elapsed)
+	local node = minetest.get_node(pos)
+	print("next_state", node.name)
+	if node.name == "compost:wood_barrel_1" then
+		minetest.set_node(pos, {name = "compost:wood_barrel_2"})
+		return true
+	end
+	if node.name == "compost:wood_barrel_2" then
+		minetest.set_node(pos, {name = "compost:wood_barrel_3"})
+		return false
+	end
+	return false
+end
+
 minetest.register_node("compost:wood_barrel", {
 	description = "Wood Barrel",
 	tiles = {"default_wood.png"},
@@ -81,7 +96,7 @@ minetest.register_node("compost:wood_barrel", {
 				puncher:set_wielded_item(w)
 			end
 		end
-	end
+	end,
 })
 
 minetest.register_node("compost:wood_barrel_1", {
@@ -101,6 +116,7 @@ minetest.register_node("compost:wood_barrel_1", {
 	is_ground_content = false,
 	groups = {choppy = 3},
 	sounds =  default.node_sound_wood_defaults(),
+	on_timer = next_state,
 })
 
 minetest.register_node("compost:wood_barrel_2", {
@@ -120,6 +136,7 @@ minetest.register_node("compost:wood_barrel_2", {
 	is_ground_content = false,
 	groups = {choppy = 3},
 	sounds =  default.node_sound_wood_defaults(),
+	on_timer = next_state,
 })
 
 minetest.register_node("compost:wood_barrel_3", {
@@ -194,31 +211,50 @@ minetest.register_craft({
 	}
 })
 
-if minetest.get_modpath ("tubelib") then
-	print ("[compost] found tubelib")
+minetest.register_craft({
+	output = "default:dirt",
+	recipe = {
+		{"compost:garden_soil"},
+	}
+})
 
-	tubelib.register_node ("compost:wood_barrel",  {}, {
-		on_pull_item = nil,
-		on_push_item = function  (pos, side, item, player_name)
-			if compost.can_compost(item:get_name()) then
-				minetest.set_node(pos, {name = "compost:wood_barrel_1"})
-				return true
-			else
-				return false
+if minetest.get_modpath("tubelib") and tubelib then
+	tubelib.register_node("compost:wood_barrel", 
+		{
+			"compost:wood_barrel_1",
+			"compost:wood_barrel_2",
+			"compost:wood_barrel_3",
+		},
+		{
+		on_pull_item = function(pos, side)
+			local node = minetest.get_node(pos)
+			if node.name == "compost:wood_barrel_3" then
+				minetest.set_node(pos, {name = "compost:wood_barrel"})
+				return ItemStack("compost:compost")
 			end
+			return nil
 		end,
-		on_unpull_item = function  (pos, side, item, player_name)
-			-- TODO?
+		on_push_item = function(pos, side, item)
+			local node = minetest.get_node(pos)
+			if node.name == "compost:wood_barrel" and compost.can_compost(item:get_name()) then
+				local meta = minetest.get_meta(pos)
+				-- 4 leaves for one compost node
+				local num = (meta:get_int("num") or 0) + 1
+				if num >= 4 then
+					num = 0
+					minetest.set_node(pos, {name = "compost:wood_barrel_1"})
+					-- speed up the process by means of a timer
+					minetest.get_node_timer(pos):start(10)
+				end
+				meta:set_int("num", num)
+				return true
+			end
 			return false
 		end,
-	})
-
-	tubelib.register_node ("compost:wood_barrel_3",  {}, {
-		on_pull_item = function  (pos, side, player_name)
-			minetest.set_node(pos, {name = "compost:wood_barrel"})
-			return {name = "compost:compost"}
+		on_unpull_item = function(pos, side, item)
+			minetest.set_node(pos, {name = "compost:wood_barrel_2"})
+			return true
 		end,
-		on_push_item = nil,
-		on_unpull_item = nil
-	})
+	})	
 end
+
