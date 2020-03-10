@@ -58,7 +58,6 @@ compost.register_group("flower")
 
 local function next_state(pos, elapsed)
 	local node = minetest.get_node(pos)
-	print("next_state", node.name)
 	if node.name == "compost:wood_barrel_1" then
 		minetest.set_node(pos, {name = "compost:wood_barrel_2"})
 		return true
@@ -68,6 +67,34 @@ local function next_state(pos, elapsed)
 		return false
 	end
 	return false
+end
+
+local function minecart_hopper_additem(pos, stack)
+	if compost.can_compost(stack:get_name()) then
+		local meta = minetest.get_meta(pos)
+		-- 4 leaves for one compost node
+		local num = (meta:get_int("num") or 0) + stack:get_count()
+		if num >= 4 then
+			num = num - 4
+			minetest.set_node(pos, {name = "compost:wood_barrel_1"})
+			-- speed up the process by means of a timer
+			minetest.get_node_timer(pos):start(10)
+		end
+		meta:set_int("num", num)
+		stack:set_count(0)
+		return stack
+	end
+	return stack
+end
+
+local function minecart_hopper_takeitem(pos, num)
+	local node = minetest.get_node(pos)
+	minetest.set_node(pos, {name = "compost:wood_barrel"})
+	return ItemStack("compost:compost")
+end
+
+local function minecart_hopper_untakeitem(pos, in_dir, stack)
+	minetest.set_node(pos, {name = "compost:wood_barrel_2"})
 end
 
 minetest.register_node("compost:wood_barrel", {
@@ -97,6 +124,8 @@ minetest.register_node("compost:wood_barrel", {
 			end
 		end
 	end,
+	minecart_hopper_additem = minecart_hopper_additem,
+	minecart_hopper_untakeitem = minecart_hopper_untakeitem,
 })
 
 minetest.register_node("compost:wood_barrel_1", {
@@ -114,9 +143,10 @@ minetest.register_node("compost:wood_barrel_1", {
 	},
 	paramtype = "light",
 	is_ground_content = false,
-	groups = {choppy = 3},
+	groups = {choppy = 3, not_in_creative_inventory=1},
 	sounds =  default.node_sound_wood_defaults(),
 	on_timer = next_state,
+	minecart_hopper_untakeitem = minecart_hopper_untakeitem,
 })
 
 minetest.register_node("compost:wood_barrel_2", {
@@ -134,9 +164,10 @@ minetest.register_node("compost:wood_barrel_2", {
 	},
 	paramtype = "light",
 	is_ground_content = false,
-	groups = {choppy = 3},
+	groups = {choppy = 3, not_in_creative_inventory=1},
 	sounds =  default.node_sound_wood_defaults(),
 	on_timer = next_state,
+	minecart_hopper_untakeitem = minecart_hopper_untakeitem,
 })
 
 minetest.register_node("compost:wood_barrel_3", {
@@ -154,13 +185,15 @@ minetest.register_node("compost:wood_barrel_3", {
 	},
 	paramtype = "light",
 	is_ground_content = false,
-	groups = {choppy = 3},
+	groups = {choppy = 3, not_in_creative_inventory=1},
 	sounds =  default.node_sound_wood_defaults(),
 	on_punch = function(pos, node, player, pointed_thing)
 		local p = {x = pos.x + math.random(0, 5)/5 - 0.5, y = pos.y+1, z = pos.z + math.random(0, 5)/5 - 0.5}
 		minetest.add_item(p, {name = "compost:compost"})
 		minetest.set_node(pos, {name = "compost:wood_barrel"})
-	end
+	end,
+	minecart_hopper_takeitem = minecart_hopper_takeitem,
+	minecart_hopper_untakeitem = minecart_hopper_untakeitem,
 })
 
 minetest.register_abm({
@@ -218,15 +251,16 @@ minetest.register_craft({
 	}
 })
 
-if minetest.get_modpath("tubelib") and tubelib then
-	tubelib.register_node("compost:wood_barrel", 
+if minetest.get_modpath("techage") and techage then
+	techage.register_node(
 		{
+			"compost:wood_barrel", 
 			"compost:wood_barrel_1",
 			"compost:wood_barrel_2",
 			"compost:wood_barrel_3",
 		},
 		{
-		on_pull_item = function(pos, side)
+		on_pull_item = function(pos, in_dir, num)
 			local node = minetest.get_node(pos)
 			if node.name == "compost:wood_barrel_3" then
 				minetest.set_node(pos, {name = "compost:wood_barrel"})
@@ -234,9 +268,9 @@ if minetest.get_modpath("tubelib") and tubelib then
 			end
 			return nil
 		end,
-		on_push_item = function(pos, side, item)
+		on_push_item = function(pos, in_dir, stack)
 			local node = minetest.get_node(pos)
-			if node.name == "compost:wood_barrel" and compost.can_compost(item:get_name()) then
+			if node.name == "compost:wood_barrel" and compost.can_compost(stack:get_name()) then
 				local meta = minetest.get_meta(pos)
 				-- 4 leaves for one compost node
 				local num = (meta:get_int("num") or 0) + 1
@@ -251,7 +285,7 @@ if minetest.get_modpath("tubelib") and tubelib then
 			end
 			return false
 		end,
-		on_unpull_item = function(pos, side, item)
+		on_unpull_item = function(pos, in_dir, stack)
 			minetest.set_node(pos, {name = "compost:wood_barrel_2"})
 			return true
 		end,

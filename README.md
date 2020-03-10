@@ -1,6 +1,9 @@
 # Compost Mod
 With this mod, you are able to compost grass, leaves, flowers...
 
+Adapted to Techage by joe7575
+
+
 ## License
 see LICENSE.txt
 
@@ -18,5 +21,5 @@ S : wood slab
 ## Bugs
 Report bugs on the forum topic or open a issue on GitHub.
 
-## Created by
+## created by
 cdqwertz - cdqwertz.github.io
