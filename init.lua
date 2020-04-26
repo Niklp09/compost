@@ -1,4 +1,13 @@
 compost = {}
+
+-- Version for compatibility checks
+compost.version = 1.0
+
+if minetest.global_exists("techage") and techage.version < 0.06 then
+	minetest.log("error", "[compost] Compost requires techage version 0.06 or newer!")
+	return
+end
+
 compost.items = {}
 compost.groups = {}
 
@@ -40,13 +49,6 @@ compost.register_item("default:dirt_with_grass")
 -- stick
 compost.register_item("default:stick")
 
--- flowers
-compost.register_item("flowers:geranium")
-compost.register_item("flowers:tulip")
-compost.register_item("flowers:rose")
-compost.register_item("flowers:dandelion_yellow")
-compost.register_item("flowers:dandelion_white")
-
 -- food
 compost.register_item("farming:bread")
 compost.register_item("farming:wheat")
@@ -54,6 +56,18 @@ compost.register_item("farming:wheat")
 -- groups
 compost.register_group("plant")
 compost.register_group("flower")
+
+-- flowers
+minetest.after(1, function()
+	for name,_ in pairs(minetest.registered_decorations) do
+		if type(name) == "string" then
+			local mod = string.split(name, ":")[1]
+			if mod == "flowers" then
+				compost.register_item(name)
+			end
+		end
+	end
+end)
 
 
 local function next_state(pos, elapsed)
@@ -251,7 +265,7 @@ minetest.register_craft({
 	}
 })
 
-if minetest.get_modpath("techage") and techage then
+if  minetest.global_exists("techage") then
 	techage.register_node(
 		{
 			"compost:wood_barrel", 

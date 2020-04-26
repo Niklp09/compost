@@ -1,7 +1,7 @@
 # Compost Mod
 With this mod, you are able to compost grass, leaves, flowers...
 
-Adapted to Techage by joe7575
+Adapted to techage/minecart by joe7575
 
 
 ## License
