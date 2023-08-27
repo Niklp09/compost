@@ -180,6 +180,7 @@ minetest.register_node("compost:wood_barrel_1", {
 	paramtype = "light",
 	is_ground_content = false,
 	groups = {choppy = 3, not_in_creative_inventory=1},
+	drop = "compost:wood_barrel",
 	sounds =  default.node_sound_wood_defaults(),
 	on_timer = next_state,
 	minecart_hopper_untakeitem = minecart_hopper_untakeitem,
@@ -201,6 +202,7 @@ minetest.register_node("compost:wood_barrel_2", {
 	paramtype = "light",
 	is_ground_content = false,
 	groups = {choppy = 3, not_in_creative_inventory=1},
+	drop = "compost:wood_barrel",
 	sounds =  default.node_sound_wood_defaults(),
 	on_timer = next_state,
 	minecart_hopper_untakeitem = minecart_hopper_untakeitem,
@@ -222,6 +224,7 @@ minetest.register_node("compost:wood_barrel_3", {
 	paramtype = "light",
 	is_ground_content = false,
 	groups = {choppy = 3, not_in_creative_inventory=1},
+	drop = "compost:wood_barrel",
 	sounds =  default.node_sound_wood_defaults(),
 	on_punch = function(pos, node, player, pointed_thing)
 		local p = {x = pos.x + math.random(0, 5)/5 - 0.5, y = pos.y+1, z = pos.z + math.random(0, 5)/5 - 0.5}
